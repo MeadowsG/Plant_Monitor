@@ -382,6 +382,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+
 	  HAL_Delay(100);
 	  if(hourlyReading){
 		  hourlyReading = 0;
@@ -401,10 +405,50 @@ int main(void)
 				}
 		  }
 	  }
+	  //DATA AND TIME REGEX CHECKS
+	  if(track == 8){
+		  for(int i = 0; i < 8; i++){
+			  dateTime[i] = UART_Recieve_Command[i];
+			  if(dateTime[i] == ':')
+				  TimeFlag = 1;
+			  else if(dateTime[i] == '/')
+				  DateFlag = 1;
+		  }
+		  dateTime[8] = '/';
+		  if(TimeFlag){
+			  char *tok;
+			  tok = strtok(dateTime,":");
+			  first = atoi(tok);
+			  tok = strtok(NULL,":");
+			  second = atoi(tok);
+			  tok = strtok(NULL,"/");
+			  third = atoi(tok);
+			  sTime.Hours = (first % 10 * 0x01) + ((first / 10) * 0x10);
+			  sTime.Minutes = (second % 10 * 0x01) + ((second / 10) * 0x10);
+			  sTime.Seconds = (third % 10 * 0x01) + ((third / 10) * 0x10);
+			  HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD);
+
+		  }
+		  if(DateFlag){
+			  char *tok;
+			  tok = strtok(dateTime,"/");
+			  first = atoi(tok);
+			  tok = strtok(NULL,"/");
+			  second = atoi(tok);
+			  tok = strtok(NULL,"/");
+			  third = atoi(tok);
+			  sDate.Month = (first % 10 * 0x01) + ((first / 10) * 0x10);;
+			  sDate.Date = (second % 10 * 0x01) + ((second / 10) * 0x10);
+			  sDate.Year = (third % 10 * 0x01) + ((third / 10) * 0x10);
+			  HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BCD);
+		  }
+		  TimeFlag = 0;
+		  DateFlag = 0;
+	  }
 
 	  circleBuffer[cirPos] = 0x00;
 	  if(cirPos != Buffer_Count)
-		  cirPos++;
+	  cirPos++;
 	  if(cirPos == 4000)
 		  cirPos = 0;
 	  if(track == 10)
